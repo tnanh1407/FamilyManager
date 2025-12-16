@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FamilyManager.Services;
+using FamilyManager.Views;
 
 namespace FamilyManager.ViewModels
 {
@@ -8,46 +9,51 @@ namespace FamilyManager.ViewModels
     {
         private readonly DatabaseService _databaseService;
 
-        public LoginViewModel(DatabaseService databaseService)
+        // Constructor: Inject DatabaseService
+        public LoginViewModel()
         {
-            _databaseService = databaseService;
+            _databaseService = new DatabaseService();
         }
 
-        // Tạo thuộc tính UserName có chức năng thông báo khi thay đổi (Binding)
         [ObservableProperty]
-        string userName;
+        string email; // Đổi UserName thành Email cho khớp với Model User
 
-        // Tạo thuộc tính Password
         [ObservableProperty]
         string password;
 
-        // Xử lý sự kiện khi bấm nút Login
+        // Xử lý sự kiện Login
         [RelayCommand]
         async Task Login()
         {
-            if (string.IsNullOrWhiteSpace(UserName) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
             {
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Vui lòng nhập đầy đủ thông tin!", "OK");
+                await Application.Current.MainPage.DisplayAlert("Lỗi", "Vui lòng nhập Email và Mật khẩu", "OK");
                 return;
             }
 
-            // --- LOGIC GIẢ LẬP (Vì Model Member chưa có Password) ---
-            // Sau này bạn có thể check Database ở đây.
-            // Ví dụ: var user = await _databaseService.CheckLogin(UserName, Password);
-            
-            // Tạm thời cho phép đăng nhập luôn để test giao diện
-            await Application.Current.MainPage.DisplayAlert("Thông báo", $"Xin chào {UserName}!", "OK");
+            // 1. Tìm user trong Database theo Email
+            var user = await _databaseService.GetUserByEmailAsync(Email);
 
-            // Chuyển hướng vào trang chính (MainPage)
-            // Dấu "//" nghĩa là reset stack, không cho back lại trang login
-            await Shell.Current.GoToAsync("//MainPage");
+            // 2. Kiểm tra mật khẩu (Lưu ý: Thực tế nên mã hóa password)
+            if (user == null || user.Password != Password)
+            {
+                await Application.Current.MainPage.DisplayAlert("Thất bại", "Email hoặc mật khẩu không đúng!", "OK");
+                return;
+            }
+
+            // 3. Đăng nhập thành công
+            await Application.Current.MainPage.DisplayAlert("Thành công", $"Xin chào {user.FullName}!", "OK");
+
+            // Chuyển vào trang chính (Dùng /// để xóa lịch sử back về login)
+            await Shell.Current.GoToAsync($"//{nameof(MainPage)}");
         }
 
-        // Xử lý sự kiện bấm nút Đăng ký (nếu có)
+        // Xử lý sự kiện chuyển sang trang Đăng ký
         [RelayCommand]
         async Task GoToRegister()
         {
-            await Application.Current.MainPage.DisplayAlert("Thông báo", "Chức năng đang phát triển", "OK");
+            // Điều hướng sang RegisterPage
+            await Shell.Current.GoToAsync(nameof(RegisterPage));
         }
     }
 }

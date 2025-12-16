@@ -1,5 +1,4 @@
-﻿
-using FamilyManager.Views;
+﻿using FamilyManager.Views;
 
 namespace FamilyManager
 {
@@ -9,8 +8,9 @@ namespace FamilyManager
         {
             InitializeComponent();
 
-            // Đăng ký đường dẫn trang chủ để Login xong thì nhảy vào đây
-            Routing.RegisterRoute("MainPage", typeof(MainPage));
+            // Đăng ký các đường dẫn (Route)
+            Routing.RegisterRoute(nameof(MainPage), typeof(MainPage));
+            Routing.RegisterRoute(nameof(RegisterPage), typeof(RegisterPage)); // Quan trọng: Đăng ký trang đăng ký
         }
     }
 }

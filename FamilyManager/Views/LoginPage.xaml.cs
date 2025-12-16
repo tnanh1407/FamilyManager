@@ -4,9 +4,10 @@ namespace FamilyManager.Views;
 
 public partial class LoginPage : ContentPage
 {
-    public LoginPage(LoginViewModel viewModel)
+    public LoginPage()
     {
         InitializeComponent();
-        this.BindingContext = viewModel; // Kết nối giao diện với logic
+        // Gán BindingContext
+        this.BindingContext = new LoginViewModel();
     }
 }

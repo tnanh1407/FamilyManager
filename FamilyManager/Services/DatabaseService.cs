@@ -17,9 +17,25 @@ namespace FamilyManager.Services
 
             // Tạo các bảng dữ liệu (Sẽ thêm tiếp các bảng khác vào đây sau này)
             await _database.CreateTableAsync<Member>();
+            await _database.CreateTableAsync<User>(); //
             // await _database.CreateTableAsync<AppTask>(); // Mở comment khi đã tạo Model Task
         }
 
+        // --- CÁC HÀM XỬ LÝ USER (ĐĂNG KÝ/ĐĂNG NHẬP) ---
+
+        // Kiểm tra xem email đã tồn tại chưa
+        public async Task<User> GetUserByEmailAsync(string email)
+        {
+            await Init();
+            return await _database.Table<User>().Where(u => u.Email == email).FirstOrDefaultAsync();
+        }
+
+        // Lưu user mới
+        public async Task<int> SaveUserAsync(User user)
+        {
+            await Init();
+            return await _database.InsertAsync(user);
+        }
         // --- CÁC HÀM XỬ LÝ CHO MEMBER (THÀNH VIÊN) ---
 
         public async Task<List<Member>> GetMembersAsync()
