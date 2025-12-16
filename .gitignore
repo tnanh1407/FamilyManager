@@ -1,0 +1,33 @@
+# .NET MAUI / .NET Core
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.cache
+*.vs/
+*.vscode/
+.DS_Store
+Thumbs.db
+
+# NuGet Packages
+*.nupkg
+!packages.config
+packages/
+# except build/, which is used as an MSBuild target.
+!packages/build/
+
+# Windows
+# Thumbs.db
+# Desktop.ini
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Ignore other platforms if only developing for Windows
+Platforms/Android/
+Platforms/iOS/
+Platforms/MacCatalyst/
+Platforms/Tizen/
+# Giữ lại Platforms/Windows/ vì bạn đang dùng
+!Platforms/Windows/
