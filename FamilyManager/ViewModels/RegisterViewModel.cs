@@ -1,102 +1,61 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using FamilyManager.Models;
 using FamilyManager.Services;
 
 namespace FamilyManager.ViewModels
 {
-    public class RegisterViewModel : INotifyPropertyChanged
+    public class RegisterViewModel : BaseViewModel
     {
-        private readonly DatabaseService _databaseService;
+        private readonly UserDatabaseService _userDb = new();
 
-        public RegisterViewModel()
-        {
-            _databaseService = new DatabaseService();
-            RegisterCommand = new Command(async () => await Register());
-            NavigateBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
-        }
+        public string FullName { get; set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string ConfirmPassword { get; set; }
 
-        // --- Các thuộc tính Binding ---
-
-        private string _fullName;
-        public string FullName
-        {
-            get => _fullName;
-            set { _fullName = value; OnPropertyChanged(); }
-        }
-
-        private string _email;
-        public string Email
-        {
-            get => _email;
-            set { _email = value; OnPropertyChanged(); }
-        }
-
-        private string _password;
-        public string Password
-        {
-            get => _password;
-            set { _password = value; OnPropertyChanged(); }
-        }
-
-        private string _confirmPassword;
-        public string ConfirmPassword
-        {
-            get => _confirmPassword;
-            set { _confirmPassword = value; OnPropertyChanged(); }
-        }
-
-        // --- Commands ---
         public ICommand RegisterCommand { get; }
         public ICommand NavigateBackCommand { get; }
 
-        // --- Logic Đăng ký ---
-        private async Task Register()
+        public RegisterViewModel()
         {
-            // 1. Validate dữ liệu đầu vào
-            if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
-            {
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Vui lòng nhập đầy đủ thông tin", "OK");
-                return;
-            }
-
-            if (Password != ConfirmPassword)
-            {
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Mật khẩu xác nhận không khớp", "OK");
-                return;
-            }
-
-            // 2. Kiểm tra Email đã tồn tại trong Database chưa
-            var existingUser = await _databaseService.GetUserByEmailAsync(Email);
-            if (existingUser != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Email này đã được sử dụng", "OK");
-                return;
-            }
-
-            // 3. Tạo đối tượng User mới
-            var newUser = new User
-            {
-                FullName = FullName,
-                Email = Email,
-                Password = Password // Trong thực tế nên mã hóa password trước khi lưu
-            };
-
-            // 4. Lưu vào SQLite
-            await _databaseService.SaveUserAsync(newUser);
-
-            await Application.Current.MainPage.DisplayAlert("Thành công", "Đăng ký tài khoản thành công!", "OK");
-
-            // 5. Quay lại trang đăng nhập
-            await Shell.Current.GoToAsync("..");
+            RegisterCommand = new Command(async () => await RegisterAsync());
+            NavigateBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
         }
 
-        // --- Implement INotifyPropertyChanged ---
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private async Task RegisterAsync()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (Password != ConfirmPassword)
+            {
+                await Application.Current.MainPage.DisplayAlert(
+                    "Lỗi", "Mật khẩu không khớp", "OK");
+                return;
+            }
+
+            var existing = await _userDb.GetUserByUsernameOrEmailAsync(Email);
+            if (existing != null)
+            {
+                await Application.Current.MainPage.DisplayAlert(
+                    "Lỗi", "Email đã tồn tại", "OK");
+                return;
+            }
+
+            var user = new User
+            {
+                FullName = FullName,
+                Username = Username,
+                Email = Email,
+                Password = Password,
+                Role = UserRole.User
+            };
+
+            await _userDb.CreateUserAsync(user);
+
+            await Application.Current.MainPage.DisplayAlert(
+                "Thành công", "Đăng ký thành công", "OK");
+
+            await Shell.Current.GoToAsync("..");
         }
     }
 }
+

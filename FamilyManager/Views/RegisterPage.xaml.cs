@@ -1,17 +1,14 @@
-﻿namespace FamilyManager.Views;
-using FamilyManager.ViewModels;
-using System;
+﻿using FamilyManager.ViewModels;
+
+namespace FamilyManager.Views;
 
 public partial class RegisterPage : ContentPage
 {
-	public RegisterPage()
-	{
-        InitializeComponent();
-        this.BindingContext = new RegisterViewModel(); // Kết nối View với ViewModel
-    }
-
-    private void InitializeComponent()
+    public RegisterPage()
     {
-        throw new NotImplementedException();
+        InitializeComponent();
+
+        // Gán ViewModel cho Page
+        BindingContext = new RegisterViewModel();
     }
 }

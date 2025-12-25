@@ -1,59 +1,147 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+﻿using System.Windows.Input;
+using FamilyManager.Models;
 using FamilyManager.Services;
-using FamilyManager.Views;
 
 namespace FamilyManager.ViewModels
 {
-    public partial class LoginViewModel : ObservableObject
+    public class LoginViewModel : BaseViewModel
     {
-        private readonly DatabaseService _databaseService;
+        private readonly UserDatabaseService _userDb;
 
-        // Constructor: Inject DatabaseService
         public LoginViewModel()
         {
-            _databaseService = new DatabaseService();
+            _userDb = new UserDatabaseService();
+
+            LoginCommand = new Command(
+                async () => await LoginAsync(),
+                CanLogin
+            );
+
+            GoToRegisterCommand = new Command(
+                async () => await GoToRegisterAsync()
+            );
         }
 
-        [ObservableProperty]
-        string email; // Đổi UserName thành Email cho khớp với Model User
+        // ========================
+        // PROPERTIES (BIND UI)
+        // ========================
 
-        [ObservableProperty]
-        string password;
-
-        // Xử lý sự kiện Login
-        [RelayCommand]
-        async Task Login()
+        private string _loginInput;
+        public string LoginInput
         {
-            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            get => _loginInput;
+            set
             {
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Vui lòng nhập Email và Mật khẩu", "OK");
-                return;
+                _loginInput = value;
+                OnPropertyChanged();
+                ((Command)LoginCommand).ChangeCanExecute();
             }
-
-            // 1. Tìm user trong Database theo Email
-            var user = await _databaseService.GetUserByEmailAsync(Email);
-
-            // 2. Kiểm tra mật khẩu (Lưu ý: Thực tế nên mã hóa password)
-            if (user == null || user.Password != Password)
-            {
-                await Application.Current.MainPage.DisplayAlert("Thất bại", "Email hoặc mật khẩu không đúng!", "OK");
-                return;
-            }
-
-            // 3. Đăng nhập thành công
-            await Application.Current.MainPage.DisplayAlert("Thành công", $"Xin chào {user.FullName}!", "OK");
-
-            // Chuyển vào trang chính (Dùng /// để xóa lịch sử back về login)
-            await Shell.Current.GoToAsync($"//{nameof(MainPage)}");
         }
 
-        // Xử lý sự kiện chuyển sang trang Đăng ký
-        [RelayCommand]
-        async Task GoToRegister()
+        private string _password;
+        public string Password
         {
-            // Điều hướng sang RegisterPage
-            await Shell.Current.GoToAsync(nameof(RegisterPage));
+            get => _password;
+            set
+            {
+                _password = value;
+                OnPropertyChanged();
+                ((Command)LoginCommand).ChangeCanExecute();
+            }
+        }
+
+        private string _errorMessage;
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                _errorMessage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                _isBusy = value;
+                OnPropertyChanged();
+                ((Command)LoginCommand).ChangeCanExecute();
+            }
+        }
+
+        // ========================
+        // COMMANDS
+        // ========================
+
+        public ICommand LoginCommand { get; }
+        public ICommand GoToRegisterCommand { get; }
+
+        // ========================
+        // METHODS
+        // ========================
+
+        private bool CanLogin()
+        {
+            return !IsBusy
+                && !string.IsNullOrWhiteSpace(LoginInput)
+                && !string.IsNullOrWhiteSpace(Password);
+        }
+
+        private async Task LoginAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                ErrorMessage = string.Empty;
+
+                // Tìm user theo Email hoặc Username
+                var user = await _userDb.GetUserByUsernameOrEmailAsync(LoginInput);
+
+                if (user == null)
+                {
+                    ErrorMessage = "Tài khoản không tồn tại";
+                    return;
+                }
+
+                // ❗ Hiện tại so sánh mật khẩu dạng plain text
+                if (user.Password != Password)
+                {
+                    ErrorMessage = "Mật khẩu không đúng";
+                    return;
+                }
+
+                // ========================
+                // LOGIN SUCCESS
+                // ========================
+
+                if (user.Role == UserRole.Admin)
+                {
+                    // TODO: điều hướng trang Admin
+                    // await Shell.Current.GoToAsync("//admin");
+                }
+                else
+                {
+                    // TODO: điều hướng trang User
+                    // await Shell.Current.GoToAsync("//home");
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task GoToRegisterAsync()
+        {
+            await Shell.Current.GoToAsync("register");
         }
     }
 }
